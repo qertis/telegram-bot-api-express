@@ -24,6 +24,10 @@
   "scripts": {
     "test": "ava tests/index.test.cjs --serial"
   },
+  "engines": {
+    "node": ">=18.x",
+    "npm": ">=8.x"
+  },
   "dependencies": {
     "node-telegram-bot-api": "~0.60.0"
   },

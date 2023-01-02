@@ -72,7 +72,7 @@ class TelegramController {
               }) {
     let telegramBot;
 
-    if (String(process.env.NODE_ENV).toLowerCase() === 'test') {
+    if (String(process.env.NODE_ENV).toLowerCase() === "test") {
       if (!domain) {
         throw new Error("domain not init");
       }
@@ -113,8 +113,26 @@ class TelegramController {
 
     this.bot = telegramBot;
 
-    telegramBot.on("message", (message, metadata) => {
+    telegramBot.on("message", async (message, metadata) => {
       const eventName = getEventName(message, metadata, Reflect.ownKeys(events));
+
+      if (message?.voice?.file_id) {
+        message.buffer = await this.getTelegramFile(message.voice.file_id);
+      }
+      if (message?.document?.file_id) {
+        message.buffer = await this.getTelegramFile(message.document.file_id);
+      }
+      if (Array.isArray(message.photo)) {
+        const [smallPhoto, mediumPhoto, bigPhoto] = message.photo;
+
+        if (bigPhoto && bigPhoto.file_size > 0 && bigPhoto.file_id) {
+          message.buffer = await this.getTelegramFile(mediumPhoto.file_id);
+        } else if (mediumPhoto && mediumPhoto.file_size > 0 && mediumPhoto.file_id) {
+          message.buffer = await this.getTelegramFile(mediumPhoto.file_id);
+        } else if (smallPhoto && smallPhoto.file_size > 0 && smallPhoto.file_id) {
+          message.buffer = await this.getTelegramFile(mediumPhoto.file_id);
+        }
+      }
 
       if (events[eventName]) {
         events[eventName](this.bot, message);
@@ -130,7 +148,22 @@ class TelegramController {
 
     return router;
   }
+  /**
+   * @param {string} fileId - file id
+   * @returns {Promise<ArrayBuffer>}
+   */
+  async getTelegramFile(fileId) {
+    const TELEGRAM_HOST = "api.telegram.org";
+    const fileInfo = await this.bot.getFile(fileId);
 
+    const res = await fetch(`https://${TELEGRAM_HOST}/file/bot${this.bot.token}/${fileInfo.file_path}`);
+    if (res.status !== 200) {
+      throw await Promise.reject("Status was not 200");
+    }
+    const buffer = await res.arrayBuffer();
+
+    return buffer;
+  }
   /**
    * @description webhook telegram message - extend default telegram request message
    * @param {express.Request} request
@@ -139,14 +172,14 @@ class TelegramController {
    */
   async api(request, response) {
     try {
-      const { message, type, chatId } = getMessageFromBody(
+      const { message, type } = getMessageFromBody(
         request.body
       );
       this.bot.processUpdate({
         ...request.body,
         message: {
           ...message,
-          type
+          type,
         }
       });
       response.sendStatus(200);
