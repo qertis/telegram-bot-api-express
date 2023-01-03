@@ -142,7 +142,7 @@ class TelegramBotController {
       }
       if (Array.isArray(message.photo)) {
         try {
-          const [photo] = await Promise.all(message.photo.map(async (photo) => {
+          message.photo = await Promise.all(message.photo.map(async (photo) => {
             if (photo.file_size > 0 && photo.file_id) {
               const file = await this.getTelegramFile(photo.file_id);
               return {
@@ -152,7 +152,6 @@ class TelegramBotController {
             }
             return photo;
           }));
-          message.photo = photo;
         } catch { }
       }
 
