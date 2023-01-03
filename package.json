@@ -1,5 +1,5 @@
 {
-  "name": "telegram-bot-api-express",
+  "name": "telegram-bot-express",
   "version": "1.0.0",
   "main": "index.cjs",
   "directories": {
@@ -7,7 +7,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/qertis/telegram-express.git"
+    "url": "git+https://github.com/qertis/telegram-bot-express.git"
   },
   "keywords": [
     "telegram",
@@ -20,9 +20,9 @@
   "author": "Denis Baskovsky (https://baskovsky.ru)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/qertis/telegram-express/issues"
+    "url": "https://github.com/qertis/telegram-bot-express/issues"
   },
-  "homepage": "https://github.com/qertis/telegram-express#readme",
+  "homepage": "https://github.com/qertis/telegram-bot-express#readme",
   "description": "",
   "scripts": {
     "test": "ava tests/index.test.cjs --serial"

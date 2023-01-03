@@ -1,20 +1,18 @@
-# telegram-bot-api-express
+# telegram-bot-express
 
 Simple and powerful Telegram Bot API expressjs middleware.
 
 ## Install
 ```bash
-npm i express --save
-npm i body-parser --save
-npm i telegram-express --save
+npm i telegram-bot-express --save
 ```
 
-## Test
-> See tests directory
+## Dependencies
+- [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
 
-```bash
-npm test
-```
+## PeerDependencies
+- express
+- body-parser
 
 ## Usage
 ```javascript
@@ -53,9 +51,9 @@ channel_post
 error
 ```
 
-## Dependencies
-- [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
+## Test
+> See tests directory
 
-## PeerDependencies
-- express
-- body-parser
+```bash
+npm test
+```
