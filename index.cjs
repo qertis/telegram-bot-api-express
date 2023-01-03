@@ -1,6 +1,6 @@
 const express = require("express");
-const TelegramBot = require("node-telegram-bot-api");
 const jsonParser = require("body-parser").json();
+const TelegramBot = require("node-telegram-bot-api");
 
 const router = express.Router();
 
@@ -40,11 +40,7 @@ function getMessageFromBody(body) {
 function getEventName(message, metadata, eventsList) {
   switch (metadata.type) {
     case "text": {
-      if (message.type === "edited_message") {
-        return "edited_message_text";
-      }
-
-      // Check RegExp
+      // Check RegExp - in first
       for (const str of eventsList) {
         if (str.startsWith("/")) {
           const lastSlash = str.lastIndexOf("/");
@@ -55,7 +51,23 @@ function getEventName(message, metadata, eventsList) {
           }
         }
       }
-      return "text";
+
+      if (message.type === "edited_message") {
+        return "edited_message_text";
+      }
+      if (message.reply_to_message) {
+        return "reply_to_message";
+      }
+      // todo стоит добавить возможность отдавать несколько типов событий. например, когда текст будет вида "hello /ping"
+      if (Array.isArray(message.entities)) {
+        if (message.entities.some((entity) => entity.type === "mention" )) {
+          return "mention";
+        }
+        if (message.entities.some((entity) => entity.type === "bot_command" )) {
+          return "bot_command";
+        }
+      }
+      return metadata.type;
     }
     default: {
       return metadata.type;
@@ -63,7 +75,15 @@ function getEventName(message, metadata, eventsList) {
   }
 }
 
-class TelegramController {
+class TelegramBotController {
+  /**
+   * @constructor
+   * @param {String} token - telegram token
+   * @param {String} [domain]
+   * @param {Number} [port]
+   * @param {Object} events
+   * @returns {Router}
+   */
   constructor({
                 token,
                 domain,
@@ -111,27 +131,29 @@ class TelegramController {
       });
     }
 
-    this.bot = telegramBot;
-
     telegramBot.on("message", async (message, metadata) => {
       const eventName = getEventName(message, metadata, Reflect.ownKeys(events));
 
       if (message?.voice?.file_id) {
-        message.buffer = await this.getTelegramFile(message.voice.file_id);
+        message.voice.file = await this.getTelegramFile(message.voice.file_id);
       }
       if (message?.document?.file_id) {
-        message.buffer = await this.getTelegramFile(message.document.file_id);
+        message.document.file = await this.getTelegramFile(message.document.file_id);
       }
       if (Array.isArray(message.photo)) {
-        const [smallPhoto, mediumPhoto, bigPhoto] = message.photo;
-
-        if (bigPhoto && bigPhoto.file_size > 0 && bigPhoto.file_id) {
-          message.buffer = await this.getTelegramFile(mediumPhoto.file_id);
-        } else if (mediumPhoto && mediumPhoto.file_size > 0 && mediumPhoto.file_id) {
-          message.buffer = await this.getTelegramFile(mediumPhoto.file_id);
-        } else if (smallPhoto && smallPhoto.file_size > 0 && smallPhoto.file_id) {
-          message.buffer = await this.getTelegramFile(mediumPhoto.file_id);
-        }
+        try {
+          const [photo] = await Promise.all(message.photo.map(async (photo) => {
+            if (photo.file_size > 0 && photo.file_id) {
+              const file = await this.getTelegramFile(photo.file_id);
+              return {
+                ...photo,
+                file: file,
+              }
+            }
+            return photo;
+          }));
+          message.photo = photo;
+        } catch { }
       }
 
       if (events[eventName]) {
@@ -144,25 +166,23 @@ class TelegramController {
       }
     });
 
+    this.bot = telegramBot;
     router.post(`/telegram/bot${token}`, jsonParser, (request, response) => this.api.apply(this, [request, response]));
 
     return router;
   }
   /**
    * @param {string} fileId - file id
-   * @returns {Promise<ArrayBuffer>}
+   * @returns {Promise<{url: string, file_path: string}>}
    */
   async getTelegramFile(fileId) {
     const TELEGRAM_HOST = "api.telegram.org";
     const fileInfo = await this.bot.getFile(fileId);
 
-    const res = await fetch(`https://${TELEGRAM_HOST}/file/bot${this.bot.token}/${fileInfo.file_path}`);
-    if (res.status !== 200) {
-      throw await Promise.reject("Status was not 200");
+    return {
+      file_path: fileInfo.file_path,
+      url: `https://${TELEGRAM_HOST}/file/bot${this.bot.token}/${fileInfo.file_path}`,
     }
-    const buffer = await res.arrayBuffer();
-
-    return buffer;
   }
   /**
    * @description webhook telegram message - extend default telegram request message
@@ -189,4 +209,4 @@ class TelegramController {
   };
 };
 
-module.exports = (args) => new TelegramController(args);
+module.exports = (args) => new TelegramBotController(args);

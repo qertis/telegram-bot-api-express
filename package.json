@@ -1,5 +1,5 @@
 {
-  "name": "telegram-express",
+  "name": "telegram-bot-api-express",
   "version": "1.0.0",
   "main": "index.cjs",
   "directories": {
@@ -12,7 +12,10 @@
   "keywords": [
     "telegram",
     "telegram-bot",
-    "telegram-express"
+    "telegram-express",
+    "telegram-bot-api-express",
+    "telegram bot express",
+    "node telegram bot api express"
   ],
   "author": "Denis Baskovsky (https://baskovsky.ru)",
   "license": "MIT",
@@ -35,5 +38,9 @@
     "ava": "4.3.3",
     "express": "4.18.2",
     "telegram-test-api": "2.6.0"
+  },
+  "peerDependencies": {
+    "express": ">= 4.18.0",
+    "body-parser": ">= 1.20.0"
   }
 }
