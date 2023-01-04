@@ -140,6 +140,12 @@ class TelegramBotController {
       if (message?.document?.file_id) {
         message.document.file = await this.getTelegramFile(message.document.file_id);
       }
+      if (message?.video?.file_id) {
+        message.video.file = await this.getTelegramFile(message.video.file_id);
+        if (message.video?.thumb) {
+          message.video.thumb.file = await this.getTelegramFile(message.video.thumb.file_id);
+        }
+      }
       if (Array.isArray(message.photo)) {
         try {
           message.photo = await Promise.all(message.photo.map(async (photo) => {

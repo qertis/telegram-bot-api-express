@@ -30,7 +30,8 @@ app.use(telegramExpress({
             bot.sendMessage(message.chat.id, 'Hello World');
         },
         // Matches "/echo [whatever]"
-        [/\/echo (.+)/]: (bot, msg) => {
+        [/\/echo (.+)/]: (bot, message) => {
+            bot.sendChatAction(message.chat.id, 'typing');
             bot.sendMessage(message.chat.id, 'PONG');
         },
     },
