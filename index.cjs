@@ -39,6 +39,12 @@ function getMessageFromBody(body) {
 
 function getEventName(message, metadata, eventsList) {
   switch (metadata.type) {
+    case "contact": {
+      if (!message.from.is_bot && message.contact.user_id === message.from.id) {
+        return "auth_by_contact";
+      }
+      return "contact";
+    }
     case "text": {
       // Check RegExp - in first
       for (const str of eventsList) {
