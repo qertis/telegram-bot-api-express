@@ -1,10 +1,10 @@
-# Telegram Bot Express
+# Telegram Bot API Express
 
 Simple and powerful Telegram Bot API expressjs middleware.
 
 ## Install
 ```bash
-npm i telegram-bot-express --save
+npm i telegram-bot-api-express --save
 ```
 
 ## Dependencies
@@ -17,7 +17,7 @@ npm i telegram-bot-express --save
 ## Usage
 ```javascript
 const express = require('express');
-const telegramBotExpress = require('telegram-bot-express');
+const telegramBotExpress = require('telegram-bot-api-express');
 
 const app = express();
 

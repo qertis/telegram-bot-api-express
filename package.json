@@ -1,7 +1,7 @@
 {
-  "name": "telegram-bot-express",
+  "name": "telegram-bot-api-express",
   "version": "1.0.0",
-  "description": "Simple and powerful Telegram Bot API expressjs middleware",
+  "description": "Simple and powerful Telegram Bot API Expressjs middleware",
   "main": "index.cjs",
   "directories": {
     "test": "tests"
@@ -14,10 +14,11 @@
     "url": "git+https://github.com/qertis/telegram-bot-express.git"
   },
   "keywords": [
-    "telegram-bot-api express",
+    "telegram-bot-api-express",
+    "telegram bot api",
     "telegram bot express",
-    "telegram-express",
-    "node telegram bot api express"
+    "telegram api bot express",
+    "node telegram bot api"
   ],
   "author": "Denis Baskovsky (https://baskovsky.ru)",
   "license": "MIT",
