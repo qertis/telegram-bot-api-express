@@ -145,6 +145,9 @@ class TelegramBotController {
       }
       if (message?.document?.file_id) {
         message.document.file = await this.getTelegramFile(message.document.file_id);
+        if (message.document?.thumb) {
+          message.document.thumb.file = await this.getTelegramFile(message.document.thumb.file_id);
+        }
       }
       if (message?.video?.file_id) {
         message.video.file = await this.getTelegramFile(message.video.file_id);

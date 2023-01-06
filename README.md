@@ -1,4 +1,4 @@
-# telegram-bot-express
+# Telegram Bot Express
 
 Simple and powerful Telegram Bot API expressjs middleware.
 
@@ -17,12 +17,12 @@ npm i telegram-bot-express --save
 ## Usage
 ```javascript
 const express = require('express');
-const telegramExpress = require('telegram-express');
+const telegramBotExpress = require('telegram-bot-express');
 
 const app = express();
 
 app.use(telegramExpress({
-    token: 'TELEGRAM_TOKEN',
+    token: 'YOUR_TELEGRAM_BOT_TOKEN',
     domain: 'http://127.0.0.1',
     events: {
         // Listen for any kind of message. There are different kinds of messages.
@@ -49,6 +49,7 @@ bot_command
 reply_to_message
 mention
 channel_post
+auth_by_contact
 error
 ```
 

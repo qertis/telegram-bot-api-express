@@ -7,6 +7,7 @@ const app = express();
 const token = '-1';
 const domain = 'localhost';
 const port = 9001;
+const userId = 1;
 
 app.use(telegramExpress({
     token: token,
@@ -14,7 +15,7 @@ app.use(telegramExpress({
     port: port,
     events: {
       [/^\/(ping|пинг)$/]: (bot) => {
-        bot.sendMessage(1, 'PONG');
+        bot.sendMessage(userId, 'PONG');
       },
     },
   }));

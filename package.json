@@ -1,20 +1,22 @@
 {
   "name": "telegram-bot-express",
   "version": "1.0.0",
+  "description": "Simple and powerful Telegram Bot API expressjs middleware",
   "main": "index.cjs",
   "directories": {
     "test": "tests"
   },
+  "files": [
+    "index.cjs"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/qertis/telegram-bot-express.git"
   },
   "keywords": [
-    "telegram",
-    "telegram-bot",
-    "telegram-express",
-    "telegram-bot-api-express",
+    "telegram-bot-api express",
     "telegram bot express",
+    "telegram-express",
     "node telegram bot api express"
   ],
   "author": "Denis Baskovsky (https://baskovsky.ru)",
@@ -23,7 +25,6 @@
     "url": "https://github.com/qertis/telegram-bot-express/issues"
   },
   "homepage": "https://github.com/qertis/telegram-bot-express#readme",
-  "description": "",
   "scripts": {
     "test": "ava tests/index.test.cjs --serial"
   },
@@ -35,9 +36,9 @@
     "node-telegram-bot-api": "~0.60.0"
   },
   "devDependencies": {
-    "ava": "4.3.3",
-    "express": "4.18.2",
-    "telegram-test-api": "2.6.0"
+    "ava": "~4.3.3",
+    "express": "~4.18.2",
+    "telegram-test-api": "~2.6.0"
   },
   "peerDependencies": {
     "express": ">= 4.18.0",
