@@ -171,13 +171,19 @@ class TelegramBotController {
       }
 
       if (events[eventName]) {
-        events[eventName](this.bot, message);
+        try {
+          await events[eventName](this.bot, message);
+        } catch (e) {
+          if (events.error) {
+            events.error(this.bot, message, e);
+          }
+        }
+      } else {
+        this.bot.emit('error', 'Unknown event');
       }
     });
     telegramBot.on("error", (error) => {
-      if (events.error) {
-        events.error(this.bot, error);
-      }
+      console.error(error);
     });
 
     this.bot = telegramBot;
