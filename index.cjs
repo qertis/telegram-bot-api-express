@@ -84,17 +84,20 @@ function getEventName(message, metadata, eventsList) {
 class TelegramBotController {
   /**
    * @constructor
-   * @param {String} token - telegram token
-   * @param {String} [domain]
-   * @param {Number} [port]
+   * @param {Object} args
+   * @param {String} args.token - telegram token
+   * @param {String} [args.domain]
+   * @param {Number} [args.port]
    * @param {Object} events
+   * @param {Function} [args.onError]
    * @returns {Router}
    */
   constructor({
                 token,
                 domain,
                 port,
-                events
+                events,
+                onError
               }) {
     let telegramBot;
 
@@ -137,8 +140,9 @@ class TelegramBotController {
       });
     }
 
+    const ownEvents = Reflect.ownKeys(events);
     telegramBot.on("message", async (message, metadata) => {
-      const eventName = getEventName(message, metadata, Reflect.ownKeys(events));
+      const eventName = getEventName(message, metadata, ownEvents);
 
       if (message?.voice?.file_id) {
         message.voice.file = await this.getTelegramFile(message.voice.file_id);
@@ -173,18 +177,19 @@ class TelegramBotController {
       if (events[eventName]) {
         try {
           await events[eventName](this.bot, message);
-        } catch (e) {
-          if (events.error) {
-            events.error(this.bot, message, e);
-          }
+        } catch (error) {
+          this.bot.emit('error', error);
         }
       } else {
-        this.bot.emit('error', 'Unknown event');
+        this.bot.emit('error', new Error('Unknown event'));
       }
     });
-    telegramBot.on("error", (error) => {
-      console.error(error);
-    });
+
+    if (onError) {
+      telegramBot.on("error", (error) => {
+        onError(this.bot, error);
+      });
+    }
 
     this.bot = telegramBot;
     router.post(`/telegram/bot${token}`, jsonParser, (request, response) => this.api.apply(this, [request, response]));

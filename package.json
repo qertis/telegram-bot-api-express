@@ -23,9 +23,9 @@
   "author": "Denis Baskovsky (https://baskovsky.ru)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/qertis/telegram-bot-express/issues"
+    "url": "https://github.com/qertis/telegram-bot-api-express/issues"
   },
-  "homepage": "https://github.com/qertis/telegram-bot-express#readme",
+  "homepage": "https://github.com/qertis/telegram-bot-api-express#readme",
   "scripts": {
     "test": "ava tests/index.test.cjs --serial"
   },

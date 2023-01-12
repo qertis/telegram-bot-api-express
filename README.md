@@ -35,6 +35,9 @@ app.use(telegramExpress({
             bot.sendMessage(message.chat.id, 'PONG');
         },
     },
+    onError(bot, error) {
+        console.error(error);
+    }
 }));
 
 app.listen(8080, () => {});

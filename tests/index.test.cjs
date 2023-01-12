@@ -17,6 +17,9 @@ app.use(telegramExpress({
       [/^\/(ping|пинг)$/]: (bot) => {
         bot.sendMessage(userId, 'PONG');
       },
+      [/error/]: () => {
+        throw new Error('Generate new error');
+      }
     },
   }));
 
@@ -81,5 +84,14 @@ test('/ping', async (t) => {
     const updates = await client.getUpdates();
     t.true(updates.ok);
     t.is(updates.result[0].message.text, "PONG");
+  }
+});
+
+test('/error', async (t) => {
+  const { client } = t.context;
+  {
+    const message = client.makeMessage("/error");
+    await client.sendMessage(message);
+    await t.throwsAsync(client.getUpdates(), {instanceOf: Error});
   }
 });
