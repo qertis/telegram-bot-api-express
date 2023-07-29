@@ -83,6 +83,7 @@ test('/ping', async (t) => {
     await client.sendMessage(message);
     const updates = await client.getUpdates();
     t.true(updates.ok);
+    t.true(updates.result[0].message.text.length > 0);
     t.is(updates.result[0].message.text, "PONG");
   }
 });

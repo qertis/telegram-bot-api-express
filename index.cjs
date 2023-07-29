@@ -184,6 +184,11 @@ class TelegramBotController {
         this.bot.emit('error', new Error('Unknown event'));
       }
     });
+    telegramBot.on("channel_post", async (message) => {
+      if (events["channel_post"]) {
+        await events["channel_post"](this.bot, message);
+      }
+    });
 
     if (onError) {
       telegramBot.on("error", (error) => {
