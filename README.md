@@ -1,6 +1,6 @@
 # Telegram Bot API Express
 
-Simple and powerful Telegram Bot API expressjs middleware.
+Simple and powerful Telegram Bot API express.js middleware.
 
 ## Install
 ```bash
@@ -20,11 +20,10 @@ const express = require('express');
 const telegramBotExpress = require('telegram-bot-api-express');
 
 const app = express();
-
 app.use(telegramExpress({
     token: 'YOUR_TELEGRAM_BOT_TOKEN',
     domain: 'http://127.0.0.1',
-    events: {
+    privateEvents: {
         // Listen for any kind of message. There are different kinds of messages.
         ['message']: (bot, message) => {
             bot.sendMessage(message.chat.id, 'Hello World');
@@ -39,7 +38,6 @@ app.use(telegramExpress({
         console.error(error);
     }
 }));
-
 app.listen(8080, () => {});
 ```
 
@@ -58,6 +56,8 @@ error
 
 ## Test
 > See tests directory
+
+Using [Ava](https://github.com/avajs/ava). 
 
 ```bash
 npm test

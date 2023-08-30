@@ -13,13 +13,18 @@ app.use(telegramExpress({
     token: token,
     domain: domain,
     port: port,
-    events: {
+    privateEvents: {
       [/^\/(ping|пинг)$/]: (bot) => {
         bot.sendMessage(userId, 'PONG');
       },
       [/error/]: () => {
         throw new Error('Generate new error');
-      }
+      },
+    },
+    publicEvents: {
+      ['text']: (bot) => {
+        bot.sendMessage(userId, 'text');
+      },
     },
   }));
 
@@ -72,27 +77,39 @@ test.after.always('guaranteed cleanup', (t) => {
 test('/ping', async (t) => {
   const { client } = t.context;
   {
-    const message = client.makeMessage("/ping");
+    const message = client.makeMessage('/ping');
     await client.sendMessage(message);
     const updates = await client.getUpdates();
     t.true(updates.ok);
-    t.is(updates.result[0].message.text, "PONG");
+    t.is(updates.result[0].message.text, 'PONG');
   }
   {
-    const message = client.makeMessage("/пинг");
+    const message = client.makeMessage('/пинг');
     await client.sendMessage(message);
     const updates = await client.getUpdates();
     t.true(updates.ok);
     t.true(updates.result[0].message.text.length > 0);
-    t.is(updates.result[0].message.text, "PONG");
+    t.is(updates.result[0].message.text, 'PONG');
   }
 });
 
 test('/error', async (t) => {
   const { client } = t.context;
   {
-    const message = client.makeMessage("/error");
+    const message = client.makeMessage('/error');
     await client.sendMessage(message);
-    await t.throwsAsync(client.getUpdates(), {instanceOf: Error});
+    await t.throwsAsync(client.getUpdates(), { instanceOf: Error });
   }
 });
+
+test('text', async (t) => {
+  const { client } = t.context;
+  {
+    const message = client.makeMessage('simple text');
+    message.chat.type = 'group'
+    const resultMessage = await client.sendMessage(message);
+    t.true(resultMessage.ok);
+    const updates = await client.getUpdates();
+    t.true(updates.ok);
+  }
+})

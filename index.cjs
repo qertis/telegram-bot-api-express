@@ -35,8 +35,14 @@ function getMessageFromBody(body) {
     chatId,
     userId
   };
-};
+}
 
+/**
+ * @param message
+ * @param metadata
+ * @param eventsList
+ * @returns {string}
+ */
 function getEventName(message, metadata, eventsList) {
   switch (metadata.type) {
     case "contact": {
@@ -88,7 +94,8 @@ class TelegramBotController {
    * @param {String} args.token - telegram token
    * @param {String} [args.domain]
    * @param {Number} [args.port]
-   * @param {Object} events
+   * @param {Object} privateEvents
+   * @param {Object} publicEvents
    * @param {Function} [args.onError]
    * @returns {Router}
    */
@@ -96,8 +103,9 @@ class TelegramBotController {
                 token,
                 domain,
                 port,
-                events,
-                onError
+                privateEvents = {},
+                publicEvents = {},
+                onError = console.error,
               }) {
     let telegramBot;
 
@@ -140,10 +148,9 @@ class TelegramBotController {
       });
     }
 
-    const ownEvents = Reflect.ownKeys(events);
+    const ownPrivateEvents = Reflect.ownKeys(privateEvents);
+    const ownPublicEvents = Reflect.ownKeys(publicEvents);
     telegramBot.on("message", async (message, metadata) => {
-      const eventName = getEventName(message, metadata, ownEvents);
-
       if (message?.voice?.file_id) {
         message.voice.file = await this.getTelegramFile(message.voice.file_id);
       }
@@ -174,27 +181,39 @@ class TelegramBotController {
         } catch { }
       }
 
-      if (events[eventName]) {
-        try {
-          await events[eventName](this.bot, message);
-        } catch (error) {
-          this.bot.emit('error', error);
+      if (message.chat.type === "private") {
+        const eventName = getEventName(message, metadata, ownPrivateEvents);
+        if (privateEvents[eventName]) {
+          try {
+            await privateEvents[eventName](this.bot, message);
+          } catch (error) {
+            this.bot.emit("error", error);
+          }
+        } else {
+          this.bot.emit("error", new Error("Unknown private event: " + eventName));
         }
       } else {
-        this.bot.emit('error', new Error('Unknown event'));
+        const eventName = getEventName(message, metadata, ownPublicEvents);
+        if (publicEvents[eventName]) {
+          try {
+            await publicEvents[eventName](this.bot, message);
+          } catch (error) {
+            this.bot.emit("error", error);
+          }
+        } else {
+          this.bot.emit("error", new Error("Unknown public event: " + eventName));
+        }
       }
     });
     telegramBot.on("channel_post", async (message) => {
-      if (events["channel_post"]) {
-        await events["channel_post"](this.bot, message);
+      if (publicEvents["channel_post"]) {
+        await publicEvents["channel_post"](this.bot, message);
       }
     });
 
-    if (onError) {
-      telegramBot.on("error", (error) => {
-        onError(this.bot, error);
-      });
-    }
+    telegramBot.on("error", (error) => {
+      onError(this.bot, error);
+    });
 
     this.bot = telegramBot;
     router.post(`/telegram/bot${token}`, jsonParser, (request, response) => this.api.apply(this, [request, response]));
@@ -233,8 +252,9 @@ class TelegramBotController {
         }
       });
       response.sendStatus(200);
-    } catch {
-      response.sendStatus(400);
+    } catch (error) {
+      console.error(error.stack);
+      response.sendStatus(error?.response?.statusCode ?? 400);
     }
   };
 };
