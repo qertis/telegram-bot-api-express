@@ -10,23 +10,24 @@ const port = 9001;
 const userId = 1;
 
 app.use(telegramExpress({
-    token: token,
-    domain: domain,
-    port: port,
-    privateEvents: {
-      [/^\/(ping|пинг)$/]: (bot) => {
-        bot.sendMessage(userId, 'PONG');
-      },
-      [/error/]: () => {
-        throw new Error('Generate new error');
-      },
+  token: token,
+  domain: domain,
+  port: port,
+  onError () {},
+  privateEvents: {
+    [/^\/(ping|пинг)$/]: (bot) => {
+      bot.sendMessage(userId, 'PONG');
     },
-    publicEvents: {
-      ['text']: (bot) => {
-        bot.sendMessage(userId, 'text');
-      },
+    [/error/]: () => {
+      throw new Error('Generate new error');
     },
-  }));
+  },
+  publicEvents: {
+    ['text']: (bot) => {
+      bot.sendMessage(userId, 'text');
+    },
+  },
+}));
 
 /**
  * This runs before all tests
