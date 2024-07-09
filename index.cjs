@@ -97,7 +97,7 @@ class TelegramBotController {
    * @param {Object} privateEvents
    * @param {Object} publicEvents
    * @param {Function} [args.onError]
-   * @returns {Router}
+   * @returns {{bot: TelegramBot,middleware: Router}}
    */
   constructor({
                 token,
@@ -218,7 +218,10 @@ class TelegramBotController {
     this.bot = telegramBot;
     router.post(`/telegram/bot${token}`, jsonParser, (request, response) => this.api.apply(this, [request, response]));
 
-    return router;
+    return {
+      bot: telegramBot,
+      middleware: router,
+    };
   }
   /**
    * @param {string} fileId - file id

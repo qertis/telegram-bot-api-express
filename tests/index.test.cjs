@@ -27,7 +27,7 @@ app.use(telegramExpress({
       bot.sendMessage(userId, 'text');
     },
   },
-}));
+}).middleware);
 
 /**
  * This runs before all tests

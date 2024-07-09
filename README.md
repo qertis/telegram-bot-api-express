@@ -3,6 +3,7 @@
 Simple and powerful Telegram Bot API express.js middleware.
 
 ## Install
+
 ```bash
 npm i telegram-bot-api-express --save
 ```
@@ -15,6 +16,7 @@ npm i telegram-bot-api-express --save
 - body-parser
 
 ## Usage
+
 ```javascript
 const express = require('express');
 const telegramBotExpress = require('telegram-bot-api-express');
@@ -37,7 +39,7 @@ app.use(telegramExpress({
     onError(bot, error) {
         console.error(error);
     }
-}));
+}).middleware);
 app.listen(8080, () => {});
 ```
 
