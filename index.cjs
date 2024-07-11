@@ -210,7 +210,14 @@ class TelegramBotController {
         await publicEvents["channel_post"](this.bot, message);
       }
     });
-
+    telegramBot.on('callback_query', async (query) => {
+      if (publicEvents[query.data]) {
+        await publicEvents[query.data](this.bot, query.message);
+      }
+      if (privateEvents[query.data]) {
+        await privateEvents[query.data](this.bot, query.message);
+      }
+    });
     telegramBot.on("error", (error) => {
       onError(this.bot, error);
     });
