@@ -218,6 +218,17 @@ class TelegramBotController {
         await privateEvents[query.data](this.bot, query.message);
       }
     });
+    telegramBot.on('inline_query', async (message) => {
+      if (message.chat_type === 'private') {
+        if (privateEvents['inline_query']) {
+          await privateEvents['inline_query'](this.bot, message);
+        }
+      } else if (message.chat_type === 'group' || message.chat_type === 'supergroup') {
+        if (publicEvents['inline_query']) {
+          await publicEvents['inline_query'](this.bot, message);
+        }
+      }
+    });
     telegramBot.on("error", (error) => {
       onError(this.bot, error);
     });

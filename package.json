@@ -1,6 +1,6 @@
 {
   "name": "telegram-bot-api-express",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Simple and powerful Telegram Bot API Express.js middleware",
   "main": "index.cjs",
   "directories": {
@@ -30,8 +30,8 @@
     "test": "ava tests/index.test.cjs --serial"
   },
   "engines": {
-    "node": ">=18.x",
-    "npm": ">=8.x"
+    "node": ">=20.x",
+    "npm": ">=10.x"
   },
   "dependencies": {
     "node-telegram-bot-api": "~0.66.0"
