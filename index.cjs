@@ -219,7 +219,7 @@ class TelegramBotController {
       }
     });
     telegramBot.on('inline_query', async (message) => {
-      if (message.chat_type === 'private') {
+      if (message.chat_type === 'private' || message.chat_type === 'sender') {
         if (privateEvents['inline_query']) {
           await privateEvents['inline_query'](this.bot, message);
         }
