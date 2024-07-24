@@ -3,6 +3,7 @@ const jsonParser = require("body-parser").json();
 const TelegramBot = require("node-telegram-bot-api");
 
 const router = express.Router();
+const TELEGRAM_HOST = "api.telegram.org";
 
 /**
  * @param {object} body - telegram native body
@@ -129,7 +130,7 @@ class TelegramBotController {
       telegramBot
         .setWebHook(`${domain}/telegram/bot${token}`, {
           max_connections: 3,
-          baseApiUrl: "https://api.telegram.org"
+          baseApiUrl: "https://" + TELEGRAM_HOST,
         })
         .then(() => {
           console.info("set webhook completed");
@@ -151,20 +152,23 @@ class TelegramBotController {
     const ownPrivateEvents = Reflect.ownKeys(privateEvents);
     const ownPublicEvents = Reflect.ownKeys(publicEvents);
     telegramBot.on("message", async (message, metadata) => {
-      if (message?.voice?.file_id) {
+      if (message.voice?.file_id) {
         message.voice.file = await this.getTelegramFile(message.voice.file_id);
       }
-      if (message?.document?.file_id) {
+      if (message.document?.file_id) {
         message.document.file = await this.getTelegramFile(message.document.file_id);
         if (message.document?.thumb) {
           message.document.thumb.file = await this.getTelegramFile(message.document.thumb.file_id);
         }
       }
-      if (message?.video?.file_id) {
+      if (message.video?.file_id) {
         message.video.file = await this.getTelegramFile(message.video.file_id);
         if (message.video?.thumb) {
           message.video.thumb.file = await this.getTelegramFile(message.video.thumb.file_id);
         }
+      }
+      if (message.audio?.file_id) {
+        message.audio.file = await this.getTelegramFile(message.audio.file_id);
       }
       if (Array.isArray(message.photo)) {
         try {
@@ -246,7 +250,6 @@ class TelegramBotController {
    * @returns {Promise<{url: string, file_path: string}>}
    */
   async getTelegramFile(fileId) {
-    const TELEGRAM_HOST = "api.telegram.org";
     const fileInfo = await this.bot.getFile(fileId);
 
     return {
