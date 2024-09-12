@@ -151,7 +151,36 @@ class TelegramBotController {
 
     const ownPrivateEvents = Reflect.ownKeys(privateEvents);
     const ownPublicEvents = Reflect.ownKeys(publicEvents);
+
+    const transactionMessages = new Map();
+    let transactionTimeout;
+    // Функция добавления сообщения в транзакцию
+    const addMessageToTransaction = (message) => {
+      const key = message.chat.id;
+      const messages = transactionMessages.get(key) ?? [];
+      transactionMessages.set(key, messages.concat(message));
+      clearTimeout(transactionTimeout);
+
+      return new Promise((resolve, reject) => {
+        transactionTimeout = setTimeout(async () => {
+          resolve(transactionMessages.get(key));
+          transactionMessages.delete(key);
+        }, 10);
+      });
+    }
     telegramBot.on("message", async (message, metadata) => {
+      if (message.forward_from || message.forward_from_chat) {
+        if (message.chat.id === message.from.id) {
+          try {
+            const messages = await addMessageToTransaction(message);
+            await privateEvents["text_forwards"](this.bot, messages);
+            return;
+          } catch (error) {
+            this.bot.emit("error", error);
+            return;
+          }
+        }
+      }
       if (message.voice?.file_id) {
         message.voice.file = await this.getTelegramFile(message.voice.file_id);
       }
