@@ -61,7 +61,9 @@ test.afterEach((t) => {
   delete t.context.tasks[successTestTitle];
 });
 
-// This runs after all tests
+/**
+ * This runs after all tests
+ */
 test.after.always('guaranteed cleanup', (t) => {
   if (!t.context.tasks) {
     return;
@@ -75,9 +77,10 @@ test.after.always('guaranteed cleanup', (t) => {
   t.log('Failed: ', failedTasks);
 });
 
-test('/ping', async (t) => {
+test('ping', async (t) => {
   const { client } = t.context;
   {
+    t.log('/ping');
     const message = client.makeMessage('/ping');
     await client.sendMessage(message);
     const updates = await client.getUpdates();
@@ -85,6 +88,7 @@ test('/ping', async (t) => {
     t.is(updates.result[0].message.text, 'PONG');
   }
   {
+    t.log('/пинг');
     const message = client.makeMessage('/пинг');
     await client.sendMessage(message);
     const updates = await client.getUpdates();
@@ -94,23 +98,25 @@ test('/ping', async (t) => {
   }
 });
 
-test('/error', async (t) => {
-  const { client } = t.context;
-  {
-    const message = client.makeMessage('/error');
-    await client.sendMessage(message);
-    await t.throwsAsync(client.getUpdates(), { instanceOf: Error });
-  }
-});
-
 test('text', async (t) => {
   const { client } = t.context;
   {
+    t.log('simple text');
     const message = client.makeMessage('simple text');
-    message.chat.type = 'group'
+    message.chat.type = 'group';
     const resultMessage = await client.sendMessage(message);
     t.true(resultMessage.ok);
     const updates = await client.getUpdates();
     t.true(updates.ok);
   }
-})
+});
+
+test('error', async (t) => {
+  const { client } = t.context;
+  {
+    t.log('/error');
+    const message = client.makeMessage('/error');
+    await client.sendMessage(message);
+    await t.throwsAsync(client.getUpdates(), { instanceOf: Error });
+  }
+});

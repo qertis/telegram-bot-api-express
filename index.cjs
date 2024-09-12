@@ -153,34 +153,12 @@ class TelegramBotController {
     const ownPublicEvents = Reflect.ownKeys(publicEvents);
 
     const transactionMessages = new Map();
-    let transactionTimeout;
+    let transactionTimeout; // todo - привязать таймаут транзакции к разным пользователям
     // Функция добавления сообщения в транзакцию
-    const addMessageToTransaction = (message) => {
-      const key = message.chat.id;
-      const messages = transactionMessages.get(key) ?? [];
-      transactionMessages.set(key, messages.concat(message));
+    const addMessageToTransaction = async (message) => {
       clearTimeout(transactionTimeout);
+      const key = message.chat.id;
 
-      return new Promise((resolve, reject) => {
-        transactionTimeout = setTimeout(async () => {
-          resolve(transactionMessages.get(key));
-          transactionMessages.delete(key);
-        }, 10);
-      });
-    }
-    telegramBot.on("message", async (message, metadata) => {
-      if (message.forward_from || message.forward_from_chat) {
-        if (message.chat.id === message.from.id) {
-          try {
-            const messages = await addMessageToTransaction(message);
-            await privateEvents["text_forwards"](this.bot, messages);
-            return;
-          } catch (error) {
-            this.bot.emit("error", error);
-            return;
-          }
-        }
-      }
       if (message.voice?.file_id) {
         message.voice.file = await this.getTelegramFile(message.voice.file_id);
       }
@@ -200,19 +178,43 @@ class TelegramBotController {
         message.audio.file = await this.getTelegramFile(message.audio.file_id);
       }
       if (Array.isArray(message.photo)) {
-        try {
-          message.photo = await Promise.all(message.photo.map(async (photo) => {
-            if (photo.file_size > 0 && photo.file_id) {
-              const file = await this.getTelegramFile(photo.file_id);
-              return {
-                ...photo,
-                file: file,
-              }
-            }
-            return photo;
-          }));
-        } catch { }
+        message.photo = await Promise.all(message.photo.map(async (photo) => {
+          if (photo.file_size > 0 && photo.file_id) {
+            const file = await this.getTelegramFile(photo.file_id);
+            return {
+              ...photo,
+              file: file,
+            };
+          }
+          return photo;
+        }));
       }
+
+      const messages = transactionMessages.get(key) ?? [];
+      transactionMessages.set(key, messages.concat(message));
+
+      return new Promise((resolve) => {
+        transactionTimeout = setTimeout(async () => {
+          resolve(transactionMessages.get(key));
+          transactionMessages.delete(key);
+        }, 10);
+      });
+    }
+    telegramBot.on("message", async (message, metadata) => {
+      if (message.forward_from || message.forward_from_chat) {
+        if (message.chat.id === message.from.id) {
+          try {
+            const messages = await addMessageToTransaction(message);
+            await privateEvents["text_forwards"](this.bot, messages);
+            return;
+          } catch (error) {
+            this.bot.emit("error", error);
+            return;
+          }
+        }
+      }
+      const messages = await addMessageToTransaction(message);
+      message = messages[0];
 
       if (message.chat.type === "private") {
         const eventName = getEventName(message, metadata, ownPrivateEvents);
@@ -223,7 +225,7 @@ class TelegramBotController {
             this.bot.emit("error", error);
           }
         } else {
-          this.bot.emit("error", new Error("Unknown private event: " + eventName));
+          console.warn("Unknown private event: " + eventName);
         }
       } else {
         const eventName = getEventName(message, metadata, ownPublicEvents);
@@ -234,7 +236,7 @@ class TelegramBotController {
             this.bot.emit("error", error);
           }
         } else {
-          this.bot.emit("error", new Error("Unknown public event: " + eventName));
+          console.warn("Unknown public event: " + eventName);
         }
       }
     });
