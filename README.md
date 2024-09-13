@@ -53,7 +53,7 @@ reply_to_message
 mention
 channel_post
 auth_by_contact
-text_forwards
+message_forwards
 error
 ```
 

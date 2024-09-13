@@ -4,6 +4,7 @@ const TelegramBot = require("node-telegram-bot-api");
 
 const router = express.Router();
 const TELEGRAM_HOST = "api.telegram.org";
+const FORWARD_TIME = 100;
 
 /**
  * @param {object} body - telegram native body
@@ -151,80 +152,50 @@ class TelegramBotController {
 
     const ownPrivateEvents = Reflect.ownKeys(privateEvents);
     const ownPublicEvents = Reflect.ownKeys(publicEvents);
-
     const transactionMessages = new Map();
-    let transactionTimeout; // todo - привязать таймаут транзакции к разным пользователям
-    // Функция добавления сообщения в транзакцию
-    const addMessageToTransaction = async (message) => {
-      clearTimeout(transactionTimeout);
-      const key = message.chat.id;
 
-      if (message.voice?.file_id) {
-        message.voice.file = await this.getTelegramFile(message.voice.file_id);
-      }
-      if (message.document?.file_id) {
-        message.document.file = await this.getTelegramFile(message.document.file_id);
-        const thumb = message.document?.thumb || message.document?.thumbnail;
-        if (thumb) {
-          message.document.thumb.file = await this.getTelegramFile(thumb.file_id);
-        }
-      }
-      if (message.video?.file_id) {
-        message.video.file = await this.getTelegramFile(message.video.file_id);
-        const thumb = message.video?.thumb || message.video?.thumbnail;
-        if (thumb) {
-          message.video.thumb.file = await this.getTelegramFile(thumb.file_id);
-        }
-      }
-      if (message.audio?.file_id) {
-        message.audio.file = await this.getTelegramFile(message.audio.file_id);
-      }
-      if (Array.isArray(message.photo)) {
-        message.photo = await Promise.all(message.photo.map(async (photo) => {
-          if (photo.file_size > 0 && photo.file_id) {
-            const file = await this.getTelegramFile(photo.file_id);
-            return {
-              ...photo,
-              file: file,
-            };
-          }
-          return photo;
-        }));
-      }
-      if (message.video_note) {
-        message.video_note.file = await this.getTelegramFile(message.video_note.file_id);
-        const thumb = message.video_note?.thumb || message.video_note?.thumbnail;
-        if (thumb) {
-          message.video_note.thumb.file = await this.getTelegramFile(thumb.file_id);
-        }
-      }
-
-      const messages = transactionMessages.get(key) ?? [];
-      transactionMessages.set(key, messages.concat(message));
-
-      return new Promise((resolve) => {
-        transactionTimeout = setTimeout(async () => {
-          resolve(transactionMessages.get(key));
-          transactionMessages.delete(key);
-        }, 10);
-      });
-    }
     telegramBot.on("message", async (message, metadata) => {
       if (message.forward_from || message.forward_from_chat) {
         if (message.chat.id === message.from.id) {
-          try {
-            const messages = await addMessageToTransaction(message);
-            await privateEvents["text_forwards"](this.bot, messages);
-            return;
-          } catch (error) {
-            this.bot.emit("error", error);
-            return;
+          const key = message.chat.id;
+          let messages = [];
+          if (transactionMessages.has(key)) {
+            const transaction = transactionMessages.get(key);
+            if (transaction.timeoutId) {
+              clearTimeout(transaction.timeoutId);
+            }
+            messages = transaction.messages;
           }
+          messages.push(message);
+          const timeoutId = setTimeout(async () => {
+            if (transactionMessages.has(key)) {
+              const { messages, timeoutId } = transactionMessages.get(key);
+              if (timeoutId) {
+                clearTimeout(timeoutId);
+              }
+              try {
+                const extMessages = await Promise.all(messages.map((message) => {
+                  return this.extendMessage(message);
+                }));
+                if (privateEvents["message_forwards"]) {
+                  await privateEvents["message_forwards"](this.bot, extMessages);
+                }
+              } catch (error) {
+                this.bot.emit("error", error);
+              } finally {
+                transactionMessages.delete(key);
+              }
+            }
+          }, FORWARD_TIME);
+          transactionMessages.set(key, {
+            messages,
+            timeoutId,
+          });
+          return;
         }
       }
-      const messages = await addMessageToTransaction(message);
-      message = messages[0];
 
+      message = await this.extendMessage(message);
       if (message.chat.type === "private") {
         const eventName = getEventName(message, metadata, ownPrivateEvents);
         if (privateEvents[eventName]) {
@@ -285,13 +256,54 @@ class TelegramBotController {
       middleware: router,
     };
   }
+  async extendMessage(message) {
+    if (message.voice?.file_id) {
+      message.voice.file = await this.getTelegramFile(message.voice.file_id);
+    }
+    if (message.document?.file_id) {
+      message.document.file = await this.getTelegramFile(message.document.file_id);
+      const thumb = message.document?.thumb || message.document?.thumbnail;
+      if (thumb) {
+        message.document.thumb.file = await this.getTelegramFile(thumb.file_id);
+      }
+    }
+    if (message.video?.file_id) {
+      message.video.file = await this.getTelegramFile(message.video.file_id);
+      const thumb = message.video?.thumb || message.video?.thumbnail;
+      if (thumb) {
+        message.video.thumb.file = await this.getTelegramFile(thumb.file_id);
+      }
+    }
+    if (message.audio?.file_id) {
+      message.audio.file = await this.getTelegramFile(message.audio.file_id);
+    }
+    if (Array.isArray(message.photo)) {
+      message.photo = await Promise.all(message.photo.map(async (photo) => {
+        if (photo.file_size > 0 && photo.file_id) {
+          const file = await this.getTelegramFile(photo.file_id);
+          return {
+            ...photo,
+            file: file,
+          };
+        }
+        return photo;
+      }));
+    }
+    if (message.video_note) {
+      message.video_note.file = await this.getTelegramFile(message.video_note.file_id);
+      const thumb = message.video_note?.thumb || message.video_note?.thumbnail;
+      if (thumb) {
+        message.video_note.thumb.file = await this.getTelegramFile(thumb.file_id);
+      }
+    }
+    return message;
+  }
   /**
    * @param {string} fileId - file id
    * @returns {Promise<{url: string, file_path: string}>}
    */
   async getTelegramFile(fileId) {
     const fileInfo = await this.bot.getFile(fileId);
-
     return {
       file_path: fileInfo.file_path,
       url: `https://${TELEGRAM_HOST}/file/bot${this.bot.token}/${fileInfo.file_path}`,
