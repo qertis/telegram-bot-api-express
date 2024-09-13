@@ -164,14 +164,16 @@ class TelegramBotController {
       }
       if (message.document?.file_id) {
         message.document.file = await this.getTelegramFile(message.document.file_id);
-        if (message.document?.thumb) {
-          message.document.thumb.file = await this.getTelegramFile(message.document.thumb.file_id);
+        const thumb = message.document?.thumb || message.document?.thumbnail;
+        if (thumb) {
+          message.document.thumb.file = await this.getTelegramFile(thumb.file_id);
         }
       }
       if (message.video?.file_id) {
         message.video.file = await this.getTelegramFile(message.video.file_id);
-        if (message.video?.thumb) {
-          message.video.thumb.file = await this.getTelegramFile(message.video.thumb.file_id);
+        const thumb = message.video?.thumb || message.video?.thumbnail;
+        if (thumb) {
+          message.video.thumb.file = await this.getTelegramFile(thumb.file_id);
         }
       }
       if (message.audio?.file_id) {
@@ -188,6 +190,13 @@ class TelegramBotController {
           }
           return photo;
         }));
+      }
+      if (message.video_note) {
+        message.video_note.file = await this.getTelegramFile(message.video_note.file_id);
+        const thumb = message.video_note?.thumb || message.video_note?.thumbnail;
+        if (thumb) {
+          message.video_note.thumb.file = await this.getTelegramFile(thumb.file_id);
+        }
       }
 
       const messages = transactionMessages.get(key) ?? [];
