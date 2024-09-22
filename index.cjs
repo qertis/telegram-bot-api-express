@@ -1,10 +1,10 @@
-const express = require("express");
+const { Router, Response, Request, } = require("express");
 const jsonParser = require("body-parser").json();
 const TelegramBot = require("node-telegram-bot-api");
 
-const router = express.Router();
+const router = Router();
 const TELEGRAM_HOST = "api.telegram.org";
-const FORWARD_TIME = 100;
+const FORWARD_TIME = 1000;
 
 /**
  * @param {object} body - telegram native body
@@ -36,13 +36,13 @@ function getMessageFromBody(body) {
     message,
     chatId,
     userId
-  };
+  }
 }
 
 /**
- * @param message
- * @param metadata
- * @param eventsList
+ * @param {*} message
+ * @param {*} metadata
+ * @param {*} eventsList
  * @returns {string}
  */
 function getEventName(message, metadata, eventsList) {
@@ -65,7 +65,6 @@ function getEventName(message, metadata, eventsList) {
           }
         }
       }
-
       if (message.type === "edited_message") {
         return "edited_message_text";
       }
@@ -99,7 +98,7 @@ class TelegramBotController {
    * @param {Object} privateEvents
    * @param {Object} publicEvents
    * @param {Function} [args.onError]
-   * @returns {{bot: TelegramBot,middleware: Router}}
+   * @returns {{bot: TelegramBot, middleware: Router}}
    */
   constructor({
                 token,
@@ -311,8 +310,8 @@ class TelegramBotController {
   }
   /**
    * @description webhook telegram message - extend default telegram request message
-   * @param {express.Request} request
-   * @param {express.Response} response
+   * @param {Request} request
+   * @param {Response} response
    * @returns {Promise<void>}
    */
   async api(request, response) {
@@ -333,6 +332,6 @@ class TelegramBotController {
       response.sendStatus(error?.response?.statusCode ?? 400);
     }
   };
-};
+}
 
 module.exports = (args) => new TelegramBotController(args);
