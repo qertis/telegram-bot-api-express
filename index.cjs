@@ -130,12 +130,21 @@ class TelegramBotController {
     } else if (domain) {
       telegramBot = new TelegramBot(token);
       telegramBot
-        .setWebHook(`${domain}/telegram/bot${token}`, {
-          max_connections: 3,
-          baseApiUrl: "https://" + TELEGRAM_HOST,
-        })
+        .deleteWebHook()
         .then(() => {
-          console.info("set webhook completed");
+          console.log("Webhook удалён");
+        })
+        .catch(() => {})
+        .finally(() => {
+          return telegramBot
+            .setWebHook(`${domain}/telegram/bot${token}`, {
+              max_connections: 3,
+              baseApiUrl: "https://" + TELEGRAM_HOST,
+            })
+        })
+        .then(() => telegramBot.getWebHookInfo())
+        .then((webhookInfo) => {
+          console.log(webhookInfo);
         })
         .catch((error) => {
           console.error(error.stack);
