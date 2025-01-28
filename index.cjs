@@ -29,8 +29,8 @@ function getMessageFromBody(body) {
     throw new Error("Unknown Telegram Body");
   }
 
-  const chatId = String(message.chat && message.chat.id);
-  const userId = String(message.from && message.from.id);
+  const chatId = String(message.chat?.id);
+  const userId = String(message.from?.id);
   return {
     type,
     message,
@@ -95,6 +95,7 @@ class TelegramBotController {
    * @param {String} args.token - telegram token
    * @param {String} [args.domain]
    * @param {Number} [args.port]
+   * @param {Boolean} [args.restart]
    * @param {Object} privateEvents
    * @param {Object} publicEvents
    * @param {Function} [args.onError]
@@ -104,6 +105,7 @@ class TelegramBotController {
                 token,
                 domain,
                 port,
+                restart = false,
                 privateEvents = {},
                 publicEvents = {},
                 onError = console.error,
@@ -121,7 +123,7 @@ class TelegramBotController {
         polling: true,
         baseApiUrl: `http://${domain}:${port}`
       });
-      telegramBot.startPolling({ restart: false });
+      telegramBot.startPolling({ restart: restart });
       telegramBot.on("polling_error", (error) => {
         console.error(error.stack);
       });
@@ -143,7 +145,7 @@ class TelegramBotController {
       });
     } else {
       telegramBot = new TelegramBot(token);
-      telegramBot.startPolling({ restart: false });
+      telegramBot.startPolling({ restart: restart });
       telegramBot.on("polling_error", (error) => {
         console.error(error.stack);
       });
@@ -226,10 +228,16 @@ class TelegramBotController {
     });
     telegramBot.on('callback_query', async (query) => {
       if (publicEvents[query.data]) {
-        await publicEvents[query.data](this.bot, query.message);
+        await publicEvents[query.data](this.bot, {
+          id: query.id,
+          ...query.message,
+        });
       }
       if (privateEvents[query.data]) {
-        await privateEvents[query.data](this.bot, query.message);
+        await privateEvents[query.data](this.bot, {
+          id: query.id,
+          ...query.message,
+        });
       }
     });
     telegramBot.on('inline_query', async (message) => {
