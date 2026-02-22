@@ -40,9 +40,9 @@ function getMessageFromBody(body) {
 }
 
 /**
- * @param {*} message
- * @param {*} metadata
- * @param {*} eventsList
+ * @param {object} message
+ * @param {object} metadata
+ * @param {string[]} eventsList
  * @returns {string}
  */
 function getEventName(message, metadata, eventsList) {
@@ -92,8 +92,8 @@ class TelegramBotController {
   /**
    * @constructor
    * @param {Object} args
-   * @param {String} args.token - telegram token
-   * @param {String} [args.domain]
+   * @param {string} args.token - telegram token
+   * @param {string} [args.domain]
    * @param {Number} [args.port]
    * @param {Boolean} [args.restart]
    * @param {Object} privateEvents

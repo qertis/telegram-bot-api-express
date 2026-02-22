@@ -30,19 +30,19 @@
     "test": "ava tests/index.test.cjs --serial"
   },
   "engines": {
-    "node": ">=20.x",
+    "node": ">=22.x",
     "npm": ">=10.x"
   },
   "dependencies": {
-    "node-telegram-bot-api": "~0.66.0"
+    "node-telegram-bot-api": "~0.67.0"
   },
   "devDependencies": {
     "ava": "~5.3.1",
-    "express": "~4.21.2",
+    "express": "~4.22.1",
     "telegram-test-api": "~4.2.1"
   },
   "peerDependencies": {
-    "express": ">= 4.21.x",
+    "express": ">= 4.22.x",
     "body-parser": ">= 1.20.3"
   }
 }
