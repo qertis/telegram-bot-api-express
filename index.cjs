@@ -236,17 +236,30 @@ class TelegramBotController {
       }
     });
     telegramBot.on('callback_query', async (query) => {
-      if (publicEvents[query.data]) {
-        await publicEvents[query.data](this.bot, {
-          id: query.id,
-          ...query.message,
-        });
+      function findCallbackHandler(events, data) {
+        if (events[data]) return events[data];
+        for (const key of Reflect.ownKeys(events)) {
+          if (typeof key !== 'string'){
+            continue;
+          }
+          if (key.startsWith('/')) {
+            const lastSlash = key.lastIndexOf('/');
+            const regex = new RegExp(key.slice(1, lastSlash), key.slice(lastSlash + 1));
+            if (regex.test(data)){
+              return events[key];
+            }
+          }
+        }
+        return null;
       }
-      if (privateEvents[query.data]) {
-        await privateEvents[query.data](this.bot, {
-          id: query.id,
-          ...query.message,
-        });
+      const callbackMessage = { id: query.id, data: query.data, ...query.message };
+      const publicHandler = findCallbackHandler(publicEvents, query.data);
+      if (publicHandler) {
+        await publicHandler(this.bot, callbackMessage);
+      }
+      const privateHandler = findCallbackHandler(privateEvents, query.data);
+      if (privateHandler) {
+        await privateHandler(this.bot, callbackMessage);
       }
     });
     telegramBot.on('inline_query', async (message) => {
