@@ -1,9 +1,10 @@
-const { Router, Response, Request, } = require("express");
-const jsonParser = require("body-parser").json();
-const TelegramBot = require("node-telegram-bot-api");
+const { Router, Response, Request, } = require('express');
+const jsonParser = require('body-parser').json();
+const TelegramBot = require('node-telegram-bot-api');
+const activitystreams = require('telegram-bot-activitystreams');
 
 const router = Router();
-const TELEGRAM_HOST = "api.telegram.org";
+const TELEGRAM_HOST = 'api.telegram.org';
 const FORWARD_TIME = 1000;
 
 /**
@@ -14,19 +15,19 @@ function getMessageFromBody(body) {
   let message;
   let type;
   if (body.message) {
-    type = "message";
+    type = 'message';
     message = body.message;
   } else if (body.edited_message) {
-    type = "edited_message";
+    type = 'edited_message';
     message = body.edited_message;
   } else if (body.channel_post) {
-    type = "channel_post";
+    type = 'channel_post';
     message = body.channel_post;
   } else if (body.callback_query) {
-    type = "callback_query";
+    type = 'callback_query';
     message = body.callback_query.message;
   } else {
-    throw new Error("Unknown Telegram Body");
+    throw new Error('Unknown Telegram Body');
   }
 
   const chatId = String(message.chat?.id);
@@ -38,7 +39,6 @@ function getMessageFromBody(body) {
     userId
   }
 }
-
 /**
  * @param {object} message
  * @param {object} metadata
@@ -47,17 +47,17 @@ function getMessageFromBody(body) {
  */
 function getEventName(message, metadata, eventsList) {
   switch (metadata.type) {
-    case "contact": {
+    case 'contact': {
       if (!message.from.is_bot && message.contact.user_id === message.from.id) {
-        return "auth_by_contact";
+        return 'auth_by_contact';
       }
-      return "contact";
+      return 'contact';
     }
-    case "text": {
+    case 'text': {
       // Check RegExp - in first
       for (const str of eventsList) {
-        if (str.startsWith("/")) {
-          const lastSlash = str.lastIndexOf("/");
+        if (str.startsWith('/')) {
+          const lastSlash = str.lastIndexOf('/');
           const restoredRegex = new RegExp(str.slice(1, lastSlash), str.slice(lastSlash + 1));
 
           if (restoredRegex.exec(message.text)) {
@@ -65,19 +65,19 @@ function getEventName(message, metadata, eventsList) {
           }
         }
       }
-      if (message.type === "edited_message") {
-        return "edited_message_text";
+      if (message.type === 'edited_message') {
+        return 'edited_message_text';
       }
       if (message.reply_to_message) {
-        return "reply_to_message";
+        return 'reply_to_message';
       }
       // todo стоит добавить возможность отдавать несколько типов событий. например, когда текст будет вида "hello /ping"
       if (Array.isArray(message.entities)) {
-        if (message.entities.some((entity) => entity.type === "mention" )) {
-          return "mention";
+        if (message.entities.some((entity) => entity.type === 'mention' )) {
+          return 'mention';
         }
-        if (message.entities.some((entity) => entity.type === "bot_command" )) {
-          return "bot_command";
+        if (message.entities.some((entity) => entity.type === 'bot_command' )) {
+          return 'bot_command';
         }
       }
       return metadata.type;
@@ -112,19 +112,19 @@ class TelegramBotController {
               }) {
     let telegramBot;
 
-    if (String(process.env.NODE_ENV).toLowerCase() === "test") {
+    if (String(process.env.NODE_ENV).toLowerCase() === 'test') {
       if (!domain) {
-        throw new Error("domain not init");
+        throw new Error('domain not init');
       }
       if (!port) {
-        throw new Error("Port not init");
+        throw new Error('Port not init');
       }
       telegramBot = new TelegramBot(token, {
         polling: true,
-        baseApiUrl: `http://${domain}:${port}`
+        baseApiUrl: `http://${domain}:${port}`,
       });
       telegramBot.startPolling({ restart: restart });
-      telegramBot.on("polling_error", (error) => {
+      telegramBot.on('polling_error', (error) => {
         console.error(error.stack);
       });
     } else if (domain) {
@@ -132,15 +132,16 @@ class TelegramBotController {
       telegramBot
         .deleteWebHook()
         .then(() => {
-          console.log("Webhook удалён");
+          console.log('Webhook удалён');
         })
         .catch(() => {})
         .finally(() => {
+          const webhookOptions = {
+            max_connections: 3,
+            baseApiUrl: 'https://' + TELEGRAM_HOST,
+          };
           return telegramBot
-            .setWebHook(`${domain}/telegram/bot${token}`, {
-              max_connections: 3,
-              baseApiUrl: "https://" + TELEGRAM_HOST,
-            })
+            .setWebHook(`${domain}/telegram/bot${token}`, webhookOptions)
         })
         .then(() => telegramBot.getWebHookInfo())
         .then((webhookInfo) => {
@@ -149,13 +150,13 @@ class TelegramBotController {
         .catch((error) => {
           console.error(error.stack);
         });
-      telegramBot.on("webhook_error", (error) => {
+      telegramBot.on('webhook_error', (error) => {
         console.error(error.stack);
       });
     } else {
       telegramBot = new TelegramBot(token);
       telegramBot.startPolling({ restart: restart });
-      telegramBot.on("polling_error", (error) => {
+      telegramBot.on('polling_error', (error) => {
         console.error(error.stack);
       });
     }
@@ -163,8 +164,15 @@ class TelegramBotController {
     const ownPrivateEvents = Reflect.ownKeys(privateEvents);
     const ownPublicEvents = Reflect.ownKeys(publicEvents);
     const transactionMessages = new Map();
+    const invokeHandler = async (handler, message) => {
+      if (!handler) {
+        return;
+      }
+      const activity = activitystreams(message);
+      await handler(activity, message, this.bot);
+    };
 
-    telegramBot.on("message", async (message, metadata) => {
+    telegramBot.on('message', async (message, metadata) => {
       if (message.forward_from || message.forward_from_chat) {
         if (message.chat.id === message.from.id) {
           const key = message.chat.id;
@@ -184,14 +192,18 @@ class TelegramBotController {
                 clearTimeout(timeoutId);
               }
               try {
-                const extMessages = await Promise.all(messages.map((message) => {
-                  return this.extendMessage(message);
+                let activities = [];
+                const extMessages = await Promise.all(messages.map(async (message) => {
+                  const extendedMessage = await this.extendMessage(message);
+                  const activity = activitystreams(extendedMessage);
+                  activities.push(activity);
+                  return extendedMessage;
                 }));
-                if (privateEvents["message_forwards"]) {
-                  await privateEvents["message_forwards"](this.bot, extMessages);
+                if (privateEvents['message_forwards']) {
+                  await privateEvents['message_forwards'](activities, extMessages);
                 }
               } catch (error) {
-                this.bot.emit("error", error);
+                this.bot.emit('error', error);
               } finally {
                 transactionMessages.delete(key);
               }
@@ -206,33 +218,35 @@ class TelegramBotController {
       }
 
       message = await this.extendMessage(message);
-      if (message.chat.type === "private") {
+      if (message.chat.type === 'private') {
         const eventName = getEventName(message, metadata, ownPrivateEvents);
         if (privateEvents[eventName]) {
           try {
-            await privateEvents[eventName](this.bot, message);
+            await invokeHandler(privateEvents[eventName], message);
           } catch (error) {
-            this.bot.emit("error", error);
+            this.bot.emit('error', error);
           }
         } else {
-          console.warn("Unknown private event: " + eventName);
+          console.warn(`Unknown private event: ${eventName}`);
         }
       } else {
         const eventName = getEventName(message, metadata, ownPublicEvents);
         if (publicEvents[eventName]) {
           try {
-            await publicEvents[eventName](this.bot, message);
+            await invokeHandler(publicEvents[eventName], message);
           } catch (error) {
-            this.bot.emit("error", error);
+            this.bot.emit('error', error);
           }
         } else {
-          console.warn("Unknown public event: " + eventName);
+          console.warn(`Unknown public event: ${eventName}`);
         }
       }
     });
-    telegramBot.on("channel_post", async (message) => {
-      if (publicEvents["channel_post"]) {
-        await publicEvents["channel_post"](this.bot, message);
+    telegramBot.on('channel_post', async (message) => {
+      try {
+        await invokeHandler(publicEvents['channel_post'], message);
+      } catch (error) {
+        this.bot.emit('error', error);
       }
     });
     telegramBot.on('callback_query', async (query) => {
@@ -252,33 +266,43 @@ class TelegramBotController {
         }
         return null;
       }
-      const callbackMessage = { id: query.id, data: query.data, ...query.message };
-      const publicHandler = findCallbackHandler(publicEvents, query.data);
-      if (publicHandler) {
-        await publicHandler(this.bot, callbackMessage);
-      }
-      const privateHandler = findCallbackHandler(privateEvents, query.data);
-      if (privateHandler) {
-        await privateHandler(this.bot, callbackMessage);
+      const callbackMessage = {
+        id: query.id,
+        data: query.data,
+        ...query.message,
+      };
+      try {
+        const publicHandler = findCallbackHandler(publicEvents, query.data);
+        if (publicHandler) {
+          await invokeHandler(publicHandler, callbackMessage);
+        }
+        const privateHandler = findCallbackHandler(privateEvents, query.data);
+        if (privateHandler) {
+          await invokeHandler(privateHandler, callbackMessage);
+        }
+      } catch (error) {
+        this.bot.emit('error', error);
       }
     });
     telegramBot.on('inline_query', async (message) => {
-      if (message.chat_type === 'private' || message.chat_type === 'sender') {
-        if (privateEvents['inline_query']) {
-          await privateEvents['inline_query'](this.bot, message);
+      try {
+        if (message.chat_type === 'private' || message.chat_type === 'sender') {
+          await invokeHandler(privateEvents['inline_query'], message);
+        } else if (message.chat_type === 'group' || message.chat_type === 'supergroup') {
+          await invokeHandler(publicEvents['inline_query'], message);
         }
-      } else if (message.chat_type === 'group' || message.chat_type === 'supergroup') {
-        if (publicEvents['inline_query']) {
-          await publicEvents['inline_query'](this.bot, message);
-        }
+      } catch (error) {
+        this.bot.emit('error', error);
       }
     });
-    telegramBot.on("error", (error) => {
+    telegramBot.on('error', (error) => {
       onError(this.bot, error);
     });
 
     this.bot = telegramBot;
-    router.post(`/telegram/bot${token}`, jsonParser, (request, response) => this.api.apply(this, [request, response]));
+    router.post(`/telegram/bot${token}`, jsonParser, (request, response) => {
+      return this.api.apply(this, [request, response]);
+    });
 
     return {
       bot: telegramBot,
@@ -288,23 +312,29 @@ class TelegramBotController {
   async extendMessage(message) {
     if (message.voice?.file_id) {
       message.voice.file = await this.getTelegramFile(message.voice.file_id);
-    }
-    if (message.document?.file_id) {
+    } else if (message.document?.file_id) {
       message.document.file = await this.getTelegramFile(message.document.file_id);
       const thumb = message.document?.thumb || message.document?.thumbnail;
       if (thumb) {
-        message.document.thumb.file = await this.getTelegramFile(thumb.file_id);
+        thumb.file = await this.getTelegramFile(thumb.file_id);
+        message.document.thumb = thumb;
       }
-    }
-    if (message.video?.file_id) {
+    } else if (message.video?.file_id) {
       message.video.file = await this.getTelegramFile(message.video.file_id);
       const thumb = message.video?.thumb || message.video?.thumbnail;
       if (thumb) {
-        message.video.thumb.file = await this.getTelegramFile(thumb.file_id);
+        thumb.file = await this.getTelegramFile(thumb.file_id);
+        message.video.thumb = thumb;
       }
-    }
-    if (message.audio?.file_id) {
+    } else if (message.audio?.file_id) {
       message.audio.file = await this.getTelegramFile(message.audio.file_id);
+    } else if (message.video_note?.file_id) {
+      message.video_note.file = await this.getTelegramFile(message.video_note.file_id);
+      const thumb = message.video_note?.thumb || message.video_note?.thumbnail;
+      if (thumb) {
+        thumb.file = await this.getTelegramFile(thumb.file_id);
+        message.video_note.thumb = thumb;
+      }
     }
     if (Array.isArray(message.photo)) {
       message.photo = await Promise.all(message.photo.map(async (photo) => {
@@ -317,13 +347,6 @@ class TelegramBotController {
         }
         return photo;
       }));
-    }
-    if (message.video_note) {
-      message.video_note.file = await this.getTelegramFile(message.video_note.file_id);
-      const thumb = message.video_note?.thumb || message.video_note?.thumbnail;
-      if (thumb) {
-        message.video_note.thumb.file = await this.getTelegramFile(thumb.file_id);
-      }
     }
     return message;
   }

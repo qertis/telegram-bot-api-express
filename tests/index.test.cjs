@@ -15,7 +15,7 @@ app.use(telegramExpress({
   port: port,
   onError () {},
   privateEvents: {
-    [/^\/(ping|пинг)$/]: (bot) => {
+    [/^\/(ping|пинг)$/]: (activity, message, bot) => {
       bot.sendMessage(userId, 'PONG');
     },
     [/error/]: () => {
@@ -23,7 +23,7 @@ app.use(telegramExpress({
     },
   },
   publicEvents: {
-    ['text']: (bot) => {
+    ['text']: (activity, message, bot) => {
       bot.sendMessage(userId, 'text');
     },
   },
