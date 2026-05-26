@@ -14,17 +14,16 @@ npm i telegram-bot-api-express --save
 
 ## PeerDependencies
 - express >= 4.22.x
-- body-parser >= 1.20.3
 
 ## Requirements
-- Node.js >= 22.x
+- Node.js >= 24.x
 - npm >= 10.x
 
 ## Usage
 
 ```javascript
-const express = require('express');
-const telegramExpress = require('telegram-bot-api-express');
+import express from 'express';
+import telegramExpress from 'telegram-bot-api-express';
 
 const app = express();
 app.use(telegramExpress({

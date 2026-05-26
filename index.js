@@ -1,7 +1,6 @@
-const { Router, Response, Request, } = require('express');
-const jsonParser = require('body-parser').json();
-const TelegramBot = require('node-telegram-bot-api');
-const activitystreams = require('telegram-bot-activitystreams');
+import express, { Router } from 'express';
+import TelegramBot from 'node-telegram-bot-api';
+import activitystreams from 'telegram-bot-activitystreams';
 
 const router = Router();
 const TELEGRAM_HOST = 'api.telegram.org';
@@ -300,7 +299,7 @@ class TelegramBotController {
     });
 
     this.bot = telegramBot;
-    router.post(`/telegram/bot${token}`, jsonParser, (request, response) => {
+    router.post(`/telegram/bot${token}`, express.json(), (request, response) => {
       return this.api.apply(this, [request, response]);
     });
 
@@ -387,4 +386,4 @@ class TelegramBotController {
   };
 }
 
-module.exports = (args) => new TelegramBotController(args);
+export default (args) => new TelegramBotController(args);

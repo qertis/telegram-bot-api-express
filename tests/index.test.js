@@ -1,7 +1,7 @@
-const test = require('ava');
-const express = require('express');
-const TelegramServer = require('telegram-test-api');
-const telegramExpress = require('../index.cjs');
+import test from 'ava';
+import express from 'express';
+import TelegramServer from 'telegram-test-api';
+import telegramExpress from '../index.js';
 
 const app = express();
 const token = '-1';
@@ -9,7 +9,7 @@ const domain = 'localhost';
 const port = 9001;
 const userId = 1;
 
-app.use(telegramExpress({
+const { bot, middleware } = telegramExpress({
   token: token,
   domain: domain,
   port: port,
@@ -27,7 +27,9 @@ app.use(telegramExpress({
       bot.sendMessage(userId, 'text');
     },
   },
-}).middleware);
+});
+
+app.use(middleware);
 
 /**
  * This runs before all tests
@@ -46,6 +48,7 @@ test.before(async (t) => {
   /*eslint-disable require-atomic-updates */
   t.context.server = server; // TelegramServer context
   t.context.client = client;
+  t.context.bot = bot;
   t.context.tasks = {};
   t.context.app = app; // ExpressServer context
   /*eslint-enable */
@@ -64,7 +67,10 @@ test.afterEach((t) => {
 /**
  * This runs after all tests
  */
-test.after.always('guaranteed cleanup', (t) => {
+test.after.always('guaranteed cleanup', async (t) => {
+  await t.context.bot?.stopPolling();
+  await t.context.server?.stop();
+
   if (!t.context.tasks) {
     return;
   }
