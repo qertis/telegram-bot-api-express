@@ -1,14 +1,22 @@
 {
   "name": "telegram-bot-api-express",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Simple and powerful Telegram Bot API Express.js middleware",
   "type": "module",
-  "exports": "./index.js",
+  "types": "./types.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types.d.ts",
+      "import": "./index.js",
+      "default": "./index.js"
+    }
+  },
   "directories": {
     "test": "tests"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "types.d.ts"
   ],
   "repository": {
     "type": "git",
@@ -35,12 +43,14 @@
     "npm": ">=10.x"
   },
   "dependencies": {
+    "@types/express": "^4.17.25",
+    "@types/node-telegram-bot-api": "^0.64.14",
     "node-telegram-bot-api": "~0.67.0",
     "telegram-bot-activitystreams": "1.0.8"
   },
   "devDependencies": {
     "ava": "^6.4.1",
-    "express": "~4.22.1",
+    "express": "~4.22.2",
     "telegram-test-api": "~4.2.1"
   },
   "peerDependencies": {

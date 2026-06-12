@@ -266,9 +266,10 @@ class TelegramBotController {
         return null;
       }
       const callbackMessage = {
+        ...query.message,
         id: query.id,
         data: query.data,
-        ...query.message,
+        inline_message_id: query.inline_message_id,
       };
       try {
         const publicHandler = findCallbackHandler(publicEvents, query.data);
@@ -355,6 +356,9 @@ class TelegramBotController {
    */
   async getTelegramFile(fileId) {
     const fileInfo = await this.bot.getFile(fileId);
+    if (!fileInfo.file_path) {
+      throw new Error(`Telegram file path is missing for file ${fileId}`);
+    }
     return {
       file_path: fileInfo.file_path,
       url: `https://${TELEGRAM_HOST}/file/bot${this.bot.token}/${fileInfo.file_path}`,
