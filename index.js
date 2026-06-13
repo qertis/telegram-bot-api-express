@@ -269,6 +269,7 @@ class TelegramBotController {
         ...query.message,
         id: query.id,
         data: query.data,
+        from: query.from,
         inline_message_id: query.inline_message_id,
       };
       try {

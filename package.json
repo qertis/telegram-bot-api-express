@@ -1,6 +1,6 @@
 {
   "name": "telegram-bot-api-express",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Simple and powerful Telegram Bot API Express.js middleware",
   "type": "module",
   "types": "./types.d.ts",
