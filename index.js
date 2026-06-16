@@ -119,7 +119,9 @@ class TelegramBotController {
         throw new Error('Port not init');
       }
       telegramBot = new TelegramBot(token, {
-        polling: true,
+        polling: {
+          autoStart: false,
+        },
         baseApiUrl: `http://${domain}:${port}`,
       });
       telegramBot.startPolling({ restart: restart });
@@ -129,7 +131,7 @@ class TelegramBotController {
     } else if (domain) {
       telegramBot = new TelegramBot(token);
       telegramBot
-        .deleteWebHook()
+        .deleteWebhook()
         .then(() => {
           console.log('Webhook удалён');
         })
@@ -140,9 +142,9 @@ class TelegramBotController {
             baseApiUrl: 'https://' + TELEGRAM_HOST,
           };
           return telegramBot
-            .setWebHook(`${domain}/telegram/bot${token}`, webhookOptions)
+            .setWebhook(`${domain}/telegram/bot${token}`, webhookOptions)
         })
-        .then(() => telegramBot.getWebHookInfo())
+        .then(() => telegramBot.getWebhookInfo())
         .then((webhookInfo) => {
           console.log(webhookInfo);
         })

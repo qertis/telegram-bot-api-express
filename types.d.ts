@@ -1,32 +1,42 @@
 import type { Router } from 'express';
-import TelegramBot from 'node-telegram-bot-api';
+import TelegramBot, {
+  type Audio,
+  type Document,
+  type InlineQuery,
+  type Message,
+  type PhotoSize,
+  type User,
+  type Video,
+  type VideoNote,
+  type Voice,
+} from 'node-telegram-bot-api';
 
 export interface TelegramFile {
   file_path: string;
   url: string;
 }
 
-export type ExtendedPhotoSize = TelegramBot.PhotoSize & {
+export type ExtendedPhotoSize = PhotoSize & {
   file?: TelegramFile;
 };
 
-export type ExtendedMessage = TelegramBot.Message & {
+export type ExtendedMessage = Message & {
   id?: string;
   data?: string;
   type?: string;
-  voice?: TelegramBot.Voice & { file?: TelegramFile };
-  document?: TelegramBot.Document & {
+  voice?: Voice & { file?: TelegramFile };
+  document?: Document & {
     file?: TelegramFile;
     thumb?: ExtendedPhotoSize;
     thumbnail?: ExtendedPhotoSize;
   };
-  video?: TelegramBot.Video & {
+  video?: Video & {
     file?: TelegramFile;
     thumb?: ExtendedPhotoSize;
     thumbnail?: ExtendedPhotoSize;
   };
-  audio?: TelegramBot.Audio & { file?: TelegramFile };
-  video_note?: TelegramBot.VideoNote & {
+  audio?: Audio & { file?: TelegramFile };
+  video_note?: VideoNote & {
     file?: TelegramFile;
     thumb?: ExtendedPhotoSize;
     thumbnail?: ExtendedPhotoSize;
@@ -37,7 +47,7 @@ export type ExtendedMessage = TelegramBot.Message & {
 export type CallbackQueryMessage = Partial<ExtendedMessage> & {
   id: string;
   data?: string;
-  from: TelegramBot.User;
+  from: User;
   inline_message_id?: string;
   chat_instance: string;
   game_short_name?: string;
@@ -45,7 +55,7 @@ export type CallbackQueryMessage = Partial<ExtendedMessage> & {
 
 export type EventMessage = ExtendedMessage | CallbackQueryMessage;
 
-export type ExtendedInlineQuery = TelegramBot.InlineQuery & {
+export type ExtendedInlineQuery = Omit<InlineQuery, 'chat_type'> & {
   chat_type?: 'sender' | 'private' | 'group' | 'supergroup' | 'channel';
 };
 
